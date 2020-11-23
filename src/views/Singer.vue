@@ -11,23 +11,26 @@
                     :key="item.name"
                     link
                 >
-                    <v-container class="py-0">
+                    <v-container
+                        class="py-0"
+                        @click="$yyMusic.changeMusic([item])"
+                    >
                         <v-row>
                             <v-img
                                 height="180"
                                 width="180"
-                                :src="item.picSrc"
+                                :src="item.songImg"
                                 class="rounded-lg d-block"
                             ></v-img>
                         </v-row>
                         <v-row class="pl-1 pt-2">
                             <div class="white--text d-block">
-                                {{ item.name }}
+                                {{ item.tsinger.singerName }}
                             </div>
                         </v-row>
                         <v-row class="pl-1">
                             <div class="grey--text d-block">
-                                {{ item.song }}
+                                {{ item.songName }}
                             </div>
                         </v-row>
                     </v-container>
@@ -40,30 +43,30 @@
 
                 <v-list>
                     <v-list-item
-                        v-for="item in popularSinger"
-                        :key="item"
+                        v-for="(item, index) in popularSinger"
+                        :key="item.name"
                         class="quaternary rounded ml-3 mb-3"
                         dense
                         style="height: 50px"
                         link
                     >
                         <v-list-item-avatar rounded>
-                            <v-img :src="item.src"></v-img>
+                            <v-img :src="item.songImg"></v-img>
                         </v-list-item-avatar>
                         <v-list-item-content class="ml-2">
-                            <v-list-item-title>{{ item.NO }}</v-list-item-title>
+                            <v-list-item-title>{{
+                                index + 1
+                            }}</v-list-item-title>
                         </v-list-item-content>
 
                         <v-list-item-content class="mr-10" style="flex-grow: 8">
                             <v-list-item-title>{{
-                                item.name
+                                item.tsinger.singerName
                             }}</v-list-item-title>
                         </v-list-item-content>
 
                         <v-list-item-content class="ml-10 text-right">
-                            <v-list-item-title>{{
-                                item.length
-                            }}</v-list-item-title>
+                            <v-list-item-title>3:23</v-list-item-title>
                         </v-list-item-content>
 
                         <v-list-item-action link>
@@ -124,91 +127,32 @@
 </template>
 
 <script>
+// 引入请求配置
+import NWOPT from "@/network/options.js";
 export default {
     data: () => {
         return {
-            newSinger: [
-                {
-                    picSrc: "https://cdn.vuetifyjs.com/images/cards/store.jpg",
-                    name: "Zak Abel",
-                    song: "love song",
-                },
-                {
-                    picSrc: "https://cdn.vuetifyjs.com/images/cards/store.jpg",
-                    name: "YulRW",
-                    song: "love song",
-                },
-                {
-                    picSrc: "https://cdn.vuetifyjs.com/images/cards/store.jpg",
-                    name: "Pjuan",
-                    song: "love song",
-                },
-                {
-                    picSrc: "https://cdn.vuetifyjs.com/images/cards/store.jpg",
-                    name: "Linlt",
-                    song: "love song",
-                },
-                {
-                    picSrc: "https://cdn.vuetifyjs.com/images/cards/store.jpg",
-                    name: "KKKKKK",
-                    song: "love song",
-                },
-                {
-                    picSrc: "https://cdn.vuetifyjs.com/images/cards/store.jpg",
-                    name: "Zak Abel",
-                    song: "love song",
-                },
-                {
-                    picSrc: "https://cdn.vuetifyjs.com/images/cards/store.jpg",
-                    name: "Zak Abel",
-                    song: "love song",
-                },
-            ],
-            popularSinger: [
-                {
-                    src: "https://cdn.vuetifyjs.com/images/lists/1.jpg",
-                    NO: "1",
-                    length: "3:23",
-                    name: "Zak Abel",
-                },
-                {
-                    src: "https://cdn.vuetifyjs.com/images/lists/1.jpg",
-                    NO: "2",
-                    length: "3:23",
-                    name: "Zak Abel",
-                },
-                {
-                    src: "https://cdn.vuetifyjs.com/images/lists/1.jpg",
-                    NO: "3",
-                    length: "3:23",
-                    name: "Zak Abel",
-                },
-                {
-                    src: "https://cdn.vuetifyjs.com/images/lists/1.jpg",
-                    NO: "4",
-                    length: "3:23",
-                    name: "Zak Abel",
-                },
-                {
-                    src: "https://cdn.vuetifyjs.com/images/lists/1.jpg",
-                    NO: "5",
-                    length: "3:23",
-                    name: "Zak Abel",
-                },
-                {
-                    src: "https://cdn.vuetifyjs.com/images/lists/1.jpg",
-                    NO: "6",
-                    length: "3:23",
-                    name: "Zak Abel",
-                },
-                {
-                    src: "https://cdn.vuetifyjs.com/images/lists/1.jpg",
-                    NO: "7",
-                    length: "3:23",
-                    name: "Zak Abel",
-                },
-            ],
+            // 新歌手
+            newSinger: [],
+            // 热门歌手
+            popularSinger: [],
         };
+    },
+    methods: {
+        requestSongerList() {
+            this.$yyRequest({
+                url: NWOPT.HOTSONG,
+            }).then((res) => {
+                let data = res.data.rows;
+
+                this.newSinger = data;
+
+                this.popularSinger = data;
+            });
+        },
+    },
+    mounted() {
+        this.requestSongerList();
     },
 };
 </script>

@@ -2,22 +2,22 @@
     <div>
         <v-container fluid>
             <v-row>
-                <v-col cols="6"
+                <v-col cols="7"
                     ><v-row dense>
                         <v-col
-                            v-for="card in cards"
-                            :key="card.title"
-                            :cols="card.flex"
+                            v-for="(card, index) in cards"
+                            :key="index"
+                            :cols="cardsFlex[index]"
                         >
-                            <v-card>
+                            <v-card link class="quaternary">
                                 <v-img
-                                    :src="card.src"
+                                    :src="card.listImg"
                                     class="white--text align-end"
                                     gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
                                     height="200px"
                                 >
                                     <v-card-title
-                                        v-text="card.title"
+                                        v-text="card.listName"
                                     ></v-card-title>
                                 </v-img>
 
@@ -40,13 +40,12 @@
                         </v-col>
                     </v-row></v-col
                 >
-                <v-col cols="6"
+                <v-col cols="5"
                     ><v-hover v-slot:default="{ hover }">
                         <v-card
                             class="mx-auto"
                             color="grey lighten-4"
                             max-width="600"
-                            
                         >
                             <v-img
                                 :aspect-ratio="16 / 9"
@@ -98,52 +97,31 @@
 </template>
 
 <script>
+// 引入请求配置
+import NWOPT from "@/network/options.js";
 export default {
     data: () => {
         return {
-            cards: [
-                {
-                    title: "[一周新歌推荐] 陈奕迅全新粤语作品，携希望与你共舞",
-                    src: "https://cdn.vuetifyjs.com/images/cards/house.jpg",
-                    flex: 4,
-                },
-                {
-                    title: "「电子」美好的日月星辰在前方等着你去欣赏",
-                    src: "https://cdn.vuetifyjs.com/images/cards/house.jpg",
-                    flex: 6,
-                },
-                {
-                    title: "你最近过得好吗？",
-                    src: "https://cdn.vuetifyjs.com/images/cards/house.jpg",
-                    flex: 2,
-                },
-                {
-                    title: "土嗨神曲 ♪ 车载抖腿~提神醒脑",
-                    src: "https://cdn.vuetifyjs.com/images/cards/road.jpg",
-                    flex: 6,
-                },
-                {
-                    title: "好运来-抖音呲花-翻自祖海",
-                    src: "https://cdn.vuetifyjs.com/images/cards/plane.jpg",
-                    flex: 6,
-                },
-                {
-                    title: "网易云比你懂我",
-                    src: "https://cdn.vuetifyjs.com/images/cards/plane.jpg",
-                    flex: 5,
-                },
-                {
-                    title: " SEVENTEEN撒娇情话6到飞起，当红男团为何狂野呐喊？",
-                    src: "https://cdn.vuetifyjs.com/images/cards/plane.jpg",
-                    flex: 3,
-                },
-                {
-                    title: "机场追星产业链有这这这这这这么长",
-                    src: "https://cdn.vuetifyjs.com/images/cards/plane.jpg",
-                    flex: 4,
-                },
-            ],
+            cards: [],
+            cardsFlex: [4, 6, 2, 6, 6, 5, 3, 4],
         };
+    },
+    methods: {
+        requestData() {
+            this.$yyRequest({
+                url: NWOPT.HOTLIST,
+            }).then((res) => {
+                let data = res.data.rows;
+                console.log(data);
+                this.cards.push(...data)
+                this.cards.push(...data)
+                this.cards = this.cards.slice(0,8)
+
+            });
+        },
+    },
+    mounted() {
+        this.requestData();
     },
 };
 </script>

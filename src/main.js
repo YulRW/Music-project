@@ -6,6 +6,9 @@ import store from './store'
 // 引入App组件
 import App from './App.vue'
 
+// 引入网络请求
+import './network'
+
 // 引入样式
 import './assets/css';
 

@@ -32,15 +32,17 @@
                         </v-btn>
                     </v-list-item-icon>
                     <!-- 歌名 歌手名 -->
-                    <v-list-item-content>
-                        <v-list-item-title
-                            >来たれわが街へ～夢見るわが街～酒場のポルカ～来たれわが街へ</v-list-item-title
-                        >
-                        <v-list-item-subtitle>椙山浩一</v-list-item-subtitle>
+                    <v-list-item-content v-if="playerList.length !== 0">
+                        <v-list-item-title>{{
+                            playerList[curPlayerIndex].songName
+                        }}</v-list-item-title>
+                        <v-list-item-subtitle>{{
+                            playerList[curPlayerIndex].tsinger.singerName
+                        }}</v-list-item-subtitle>
                     </v-list-item-content>
 
                     <v-spacer></v-spacer>
-                    
+
                     <v-list-item-icon class="mr-4">
                         <v-btn icon>
                             <v-icon>mdi-volume-high</v-icon>
@@ -53,13 +55,28 @@
                         </v-btn>
                     </v-list-item-icon>
 
-                    <v-list-item-icon class="mr-16">
-                        <v-btn icon>
-                            <v-icon>mdi-sync</v-icon>
-                        </v-btn>
-                    </v-list-item-icon>
+                    <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item-icon
+                                class="mr-16"
+                                v-bind="attrs"
+                                v-on="on"
+                                @click="handlePlayerModeChange"
+                            >
+                                <v-btn icon>
+                                    <v-icon>{{
+                                        playerModeData[playerMode].icon
+                                    }}</v-icon>
+                                </v-btn>
+                            </v-list-item-icon>
+                        </template>
+                        <span
+                            >当前播放状态：{{
+                                playerModeData[playerMode].type
+                            }}</span
+                        >
+                    </v-tooltip>
 
-                    
                     <!-- 上一首 -->
                     <v-list-item-icon>
                         <v-btn icon>
@@ -108,8 +125,17 @@ export default {
             audio: null,
 
             // 默认歌曲
-            defaultMusicSrc:
-                "/来たれわが街へ～夢見るわが街～酒場のポルカ～来たれわが街へ.mp3",
+            defaultMusicSrc: {
+                musicUrl:
+                    "/来たれわが街へ～夢見るわが街～酒場のポルカ～来たれわが街へ.mp3",
+                songImg:
+                    "http://47.115.72.55:8888/group1/M00/00/00/rBePbV-j9K2AXKgIAAbSNc7Kb1g207.jpg",
+                songName:
+                    "来たれわが街へ～夢見るわが街～酒場のポルカ～来たれわが街へ",
+                tsinger: {
+                    singerName: "椙山浩一",
+                },
+            },
 
             // 是否暂停
             paused: true,
@@ -122,7 +148,37 @@ export default {
 
             // 进度条定时器
             progressTimer: null,
+
+            // 当前播放模式（单曲循环-0、列表循环-1、列表随机-2）
+            playerMode: 0,
+
+            // 播放模式数据
+            playerModeData: [
+                {
+                    icon: "mdi-sync",
+                    type: "单曲循环",
+                },
+                {
+                    icon: "mdi-playlist-play",
+                    type: "列表循环",
+                },
+                {
+                    icon: "mdi-shuffle",
+                    type: "列表随机",
+                },
+            ],
+
+            // 当前播放歌曲
+            curPlayerIndex: 0,
+
+            // 歌曲播放列表
+            playerList:[]
         };
+    },
+    props:{
+        songList:{
+            type:Array
+        }
     },
     methods: {
         // 播放
@@ -153,7 +209,6 @@ export default {
         },
         // 鼠标按下（在滑动块）
         sliderMousedown() {
-            console.log("按下");
             this.syncStatus = false;
         },
         sliderEnd(e) {
@@ -164,7 +219,6 @@ export default {
             this.play();
         },
         sliderMouseup() {
-            console.log("松开");
             setTimeout(() => {
                 this.syncStatus = true;
                 let tTime = this.audio.duration;
@@ -182,6 +236,13 @@ export default {
         //     }
         //     return `${min}:${s}`;
         // },
+        // 歌曲播放模式切换
+        handlePlayerModeChange() {
+            this.playerMode++;
+            if (this.playerMode > this.playerModeData.length - 1) {
+                this.playerMode = 0;
+            }
+        },
     },
     computed: {
         // musicProgress(val) {
@@ -201,13 +262,62 @@ export default {
             this.audio = audio;
 
             // 默认播放歌曲
-            audio.src = this.defaultMusicSrc;
+            this.playerList.push(this.defaultMusicSrc);
+            audio.src = this.playerList[0].musicUrl;
 
+            /**
+             * 挂载监听
+             */
             this.audio.durationchange = (e) => {
                 console.log("时常", e);
             };
+
+            this.audio.onended = (e) => {
+                switch (this.playerMode) {
+                    // 单曲循环
+                    case 0:
+                        audio.src = this.playerList[
+                            this.curPlayerIndex
+                        ].musicUrl;
+                        this.play()
+                        break;
+                    // 列表循环
+                    case 1:
+                        this.curPlayerIndex++;
+                        if (this.curPlayerIndex > this.playerList.length - 1) {
+                            this.curPlayerIndex = 0;
+                        }
+                        audio.src = this.playerList[
+                            this.curPlayerIndex
+                        ].musicUrl;
+                        this.play()
+                        break;
+                    // 列表随机
+                    case 2:
+                        this.curPlayerIndex++;
+                        if (this.curPlayerIndex > this.playerList.length - 1) {
+                            this.curPlayerIndex = 0;
+                        }
+                        audio.src = this.playerList[
+                            this.curPlayerIndex
+                        ].musicUrl;
+                        this.play()
+                        break;
+                    default:
+                        break;
+                }
+            };
         });
     },
+    watch:{
+        songList(newVal,oldVal){
+            console.log(newVal,'333');
+            this.playerList = newVal
+            this.audio.src = this.playerList[0].musicUrl
+            this.curPlayerIndex = 0
+            this.play()
+        }
+    }
 };
 </script>
 
