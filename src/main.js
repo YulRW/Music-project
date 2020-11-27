@@ -20,6 +20,10 @@ import yy from './utils'
 Vue.prototype.$yyHot = yy.$yyHot
 Vue.prototype.$yyMusic = yy.$yyMusic
 
+// 其他插件
+import cookies from 'js-cookie';
+Vue.prototype.$yyCookies = cookies;
+
 // 配置
 Vue.config.productionTip = false
 

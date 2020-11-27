@@ -13,14 +13,12 @@ export default new Vuetify({
         themes: {
             light: {
                 primary: '#f90'  //#FA7268
-
             },
             dark: {
                 primary: '#654EA3', //紫
                 secondary:'#1e1f23',//灰(页面主背景)
                 tertiary:'#17181d',//黑(侧边栏)
-                quaternary:'#26272c'//灰-2(页面块背景)
-
+                quaternary:'#26272c',//灰-2(页面块背景)
             }
             // 19:#FA7268
             // 18:#654EA3

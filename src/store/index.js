@@ -5,13 +5,55 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
+    // 全局状态
+    status:{
+      currentMusicOpen:false,
+      currentMusicListOpen:false,
+      currentSinger:false
+    },
     // 音频对象
     musicAudio: null,
     // 视频对象
     musicVideo: null,
 
     // 歌曲列表
-    songList: []
+    songList: [],
+
+    // 登录状态
+    isLogin: false,
+
+    // 用户数据对象
+    userInfo: {},
+
+    // 主题
+    theme: 'default',
+    // 主题数据
+    themeData: [{
+
+    }],
+    // 全局快捷消息弹窗
+    showSnackbar: null,
+
+    //用户“喜欢”歌单
+    myLoveList: [],
+
+    // 用户所有歌单
+    mySongList: [],
+
+    // 当前歌曲
+    currentMusic:null,
+
+    // 播放状态
+    isPlay:false,
+
+    // 当前歌单
+    currentMusicList:null,
+
+    // 当前歌单中歌曲的index
+    curPlayerIndex:0,
+
+    // 当前歌手信息
+    currentSinger:null
   },
   mutations: {
     // 更新vuex中state数据

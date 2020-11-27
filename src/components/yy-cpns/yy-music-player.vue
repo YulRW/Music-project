@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="yy-music-player">
         <v-card tile>
             <!-- 音乐进度条 -->
             <v-slider
@@ -31,8 +31,14 @@
                             <v-icon color="red">mdi-heart</v-icon>
                         </v-btn>
                     </v-list-item-icon>
+
                     <!-- 歌名 歌手名 -->
-                    <v-list-item-content v-if="playerList.length !== 0">
+                    <v-list-item-content
+                        @click="
+                            $yyHot.update(['status', 'currentMusicOpen'], true)
+                        "
+                        v-if="playerList.length !== 0"
+                    >
                         <v-list-item-title>{{
                             playerList[curPlayerIndex].songName
                         }}</v-list-item-title>
@@ -43,18 +49,96 @@
 
                     <v-spacer></v-spacer>
 
-                    <v-list-item-icon class="mr-4">
-                        <v-btn icon>
-                            <v-icon>mdi-volume-high</v-icon>
-                        </v-btn>
-                    </v-list-item-icon>
+                    <!-- 
+                        扩展功能
+                     -->
+                    <!-- 音量 -->
+                    <v-menu offset-y top open-on-hover>
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item-icon
+                                class="mr-4"
+                                v-bind="attrs"
+                                v-on="on"
+                            >
+                                <v-btn icon @click="handleVolumeType">
+                                    <template v-if="isVolumeOn">
+                                        <v-icon>{{ volumeIcon }}</v-icon>
+                                    </template>
 
-                    <v-list-item-icon class="mr-4">
-                        <v-btn icon>
-                            <v-icon>mdi-format-list-bulleted</v-icon>
-                        </v-btn>
-                    </v-list-item-icon>
+                                    <v-icon v-else>mdi-volume-off</v-icon>
+                                </v-btn>
+                            </v-list-item-icon>
+                        </template>
+                        <v-slider
+                            v-model="volume"
+                            @input="handleVolume"
+                            vertical
+                            class="my-4 volume-slider-class"
+                        ></v-slider>
+                    </v-menu>
 
+                    <!-- 展现歌单 -->
+
+                    <v-menu offset-y top :close-on-content-click="false">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item-icon
+                                class="mr-4"
+                                v-bind="attrs"
+                                v-on="on"
+                            >
+                                <v-btn icon>
+                                    <v-icon>mdi-format-list-bulleted</v-icon>
+                                </v-btn>
+                            </v-list-item-icon>
+                        </template>
+                        <v-card min-width="344" max-width="344">
+                            <v-list dense>
+                                <v-list-item
+                                    dense
+                                    two-line
+                                    v-for="(item, index) in playerList"
+                                    :key="index"
+                                    link
+                                    @click="changeList(index)"
+                                >
+                                    <!-- icon -->
+                                    <v-list-item-action>
+                                        <v-btn icon>
+                                            <v-icon
+                                                v-if="
+                                                    !(curPlayerIndex === index)
+                                                "
+                                            >
+                                                mdi-play-outline
+                                            </v-icon>
+
+                                            <v-icon v-else
+                                                >mdi-play-circle-outline</v-icon
+                                            >
+                                        </v-btn>
+                                    </v-list-item-action>
+
+                                    <!-- 内容 -->
+                                    <v-list-item-content>
+                                        <v-list-item-title>{{
+                                            item.songName
+                                        }}</v-list-item-title>
+                                        <v-list-item-subtitle>{{
+                                            item.tsinger.singerName
+                                        }}</v-list-item-subtitle>
+                                    </v-list-item-content>
+
+                                    <v-list-item-action>
+                                        <v-btn icon>
+                                            <v-icon>mdi-close</v-icon>
+                                        </v-btn>
+                                    </v-list-item-action>
+                                </v-list-item>
+                            </v-list>
+                        </v-card>
+                    </v-menu>
+
+                    <!-- 歌曲模式 -->
                     <v-tooltip top>
                         <template v-slot:activator="{ on, attrs }">
                             <v-list-item-icon
@@ -78,7 +162,7 @@
                     </v-tooltip>
 
                     <!-- 上一首 -->
-                    <v-list-item-icon>
+                    <v-list-item-icon @click="pre()">
                         <v-btn icon>
                             <v-icon>mdi-rewind</v-icon>
                         </v-btn>
@@ -103,7 +187,7 @@
                     </v-list-item-icon>
 
                     <!-- 下一首 -->
-                    <v-list-item-icon class="ml-0 mr-3">
+                    <v-list-item-icon class="ml-0 mr-3" @click="next()">
                         <v-btn icon>
                             <v-icon>mdi-fast-forward</v-icon>
                         </v-btn>
@@ -121,13 +205,13 @@
 export default {
     data: () => {
         return {
+            publicPath: process.env.BASE_URL,
             // 音频对象
             audio: null,
 
             // 默认歌曲
             defaultMusicSrc: {
-                musicUrl:
-                    "/来たれわが街へ～夢見るわが街～酒場のポルカ～来たれわが街へ.mp3",
+                musicUrl: `${process.env.BASE_URL}来たれわが街へ～夢見るわが街～酒場のポルカ～来たれわが街へ.mp3`,
                 songImg:
                     "http://47.115.72.55:8888/group1/M00/00/00/rBePbV-j9K2AXKgIAAbSNc7Kb1g207.jpg",
                 songName:
@@ -136,6 +220,12 @@ export default {
                     singerName: "椙山浩一",
                 },
             },
+
+            //音量
+            volume: 50,
+
+            // 音量开关
+            isVolumeOn: true,
 
             // 是否暂停
             paused: true,
@@ -172,13 +262,13 @@ export default {
             curPlayerIndex: 0,
 
             // 歌曲播放列表
-            playerList:[]
+            playerList: [],
         };
     },
-    props:{
-        songList:{
-            type:Array
-        }
+    props: {
+        songList: {
+            type: Array,
+        },
     },
     methods: {
         // 播放
@@ -186,16 +276,35 @@ export default {
             this.paused = false;
             this.audio.play();
             this.syncStatus = true;
+            this.$store.state.isPlay = true;
             this.syncProgress();
         },
         // 暂停
         pause() {
             this.paused = true;
             this.syncStatus = false;
+            this.$store.state.isPlay = false;
             this.audio.pause();
+        },
+        // 上一首
+        pre() {
+            if (this.curPlayerIndex - 1 < 0) {
+                this.curPlayerIndex = this.playerList.length - 1;
+            } else {
+                this.curPlayerIndex--;
+            }
+        },
+        // 下一首
+        next() {
+            if (this.curPlayerIndex + 1 > this.playerList.length - 1) {
+                this.curPlayerIndex = 0;
+            } else {
+                this.curPlayerIndex++;
+            }
         },
         // 进步条同步
         syncProgress() {
+            console.log('定时器');
             if (!this.syncStatus) {
                 clearTimeout(this.progressTimer);
                 return;
@@ -228,14 +337,6 @@ export default {
                 this.play();
             }, 0);
         },
-        // numberToTime(length) {
-        //     let min = parseInt(length / 60);
-        //     let s = length % 60;
-        //     if (s.length === 1) {
-        //         s = "0" + s;
-        //     }
-        //     return `${min}:${s}`;
-        // },
         // 歌曲播放模式切换
         handlePlayerModeChange() {
             this.playerMode++;
@@ -243,13 +344,49 @@ export default {
                 this.playerMode = 0;
             }
         },
+        // 同步音量
+        handleVolume() {
+            this.audio.volume = this.volume / 100;
+        },
+        // 音量模式
+        handleVolumeType() {
+            this.isVolumeOn = !this.isVolumeOn;
+            if (this.isVolumeOn) {
+                this.handleVolume();
+            } else {
+                this.audio.volume = 0;
+            }
+        },
+        changeList(index) {
+            if (this.curPlayerIndex === index) {
+                return;
+            }
+            this.curPlayerIndex = index;
+            this.pause();
+            this.audio.src = this.playerList[index].musicUrl;
+            clearTimeout(this.progressTimer);
+            this.play();
+        },
     },
     computed: {
         // musicProgress(val) {
         //     return `${this.numberToTime(
         //         parseInt(val / 10)
         //     )} / ${this.numberToTime(this.audio.duration)}`;
-        // },
+        // }
+        /**
+         * 音量icon选择
+         */
+        volumeIcon() {
+            switch (true) {
+                case this.volume < 33:
+                    return "mdi-volume-low";
+                case !!(this.volume >= 33 && this.volume < 66):
+                    return "mdi-volume-medium";
+                case this.volume >= 66:
+                    return "mdi-volume-high";
+            }
+        },
     },
     created() {
         this.$nextTick(() => {
@@ -264,6 +401,10 @@ export default {
             // 默认播放歌曲
             this.playerList.push(this.defaultMusicSrc);
             audio.src = this.playerList[0].musicUrl;
+            clearTimeout(this.progressTimer);
+
+            // 初始化音量
+            this.volume = this.audio.volume * 100;
 
             /**
              * 挂载监听
@@ -279,7 +420,8 @@ export default {
                         audio.src = this.playerList[
                             this.curPlayerIndex
                         ].musicUrl;
-                        this.play()
+                        clearTimeout(this.progressTimer);
+                        this.play();
                         break;
                     // 列表循环
                     case 1:
@@ -290,7 +432,8 @@ export default {
                         audio.src = this.playerList[
                             this.curPlayerIndex
                         ].musicUrl;
-                        this.play()
+                        clearTimeout(this.progressTimer);
+                        this.play();
                         break;
                     // 列表随机
                     case 2:
@@ -301,7 +444,8 @@ export default {
                         audio.src = this.playerList[
                             this.curPlayerIndex
                         ].musicUrl;
-                        this.play()
+                        clearTimeout(this.progressTimer);
+                        this.play();
                         break;
                     default:
                         break;
@@ -309,17 +453,49 @@ export default {
             };
         });
     },
-    watch:{
-        songList(newVal,oldVal){
-            console.log(newVal,'333');
-            this.playerList = newVal
-            this.audio.src = this.playerList[0].musicUrl
-            this.curPlayerIndex = 0
-            this.play()
-        }
-    }
+    watch: {
+        songList(newVal, oldVal) {
+            this.playerList = newVal;
+            this.audio.src = this.playerList[0].musicUrl;
+            clearTimeout(this.progressTimer);
+            this.curPlayerIndex = 0;
+            this.$store.state.currentMusic = this.playerList[
+                this.curPlayerIndex
+            ];
+            this.play();
+        },
+        curPlayerIndex(newVal, oldVal) {
+            if (this.playerList.length === 1) {
+                this.$yyHot.update("showSnackbar", {
+                    type: "info",
+                    text: "目前该播放列表只有一首歌曲",
+                });
+                newVal = 0;
+            }
+
+            this.pause();
+            this.audio.src = this.playerList[newVal].musicUrl;
+            clearTimeout(this.progressTimer);
+            this.play();
+            this.$store.state.currentMusic = this.playerList[newVal];
+            console.log(this.playerList, "llll");
+        },
+        "$store.state.curPlayerIndex": function (newVal, oldVal) {
+            this.changeList(newVal);
+        },
+    },
 };
 </script>
 
 <style>
+.volume-slider-class .v-input__slot .v-slider--vertical {
+    min-height: 80px;
+}
+
+.music-player-slider .v-messages {
+    min-height: 0px;
+}
+</style>
+
+<style scoped>
 </style>

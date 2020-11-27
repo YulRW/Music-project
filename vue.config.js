@@ -5,7 +5,13 @@ module.exports = {
   "transpileDependencies": [
     "vuetify"
   ],
-  // chainWebpackresolve:config=>{
-  //   config.resolve.alias.set('@public',resolve('public'))
-  // }
+  publicPath: './',
+  chainWebpack: config => {
+    config
+      .plugin('html')
+      .tap(args => {
+        args[0].title = '智鲨音乐'
+        return args
+      })
+  },
 }

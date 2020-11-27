@@ -1,44 +1,56 @@
 <template>
-    <v-container fluid width="100%">
-        <v-row>
-            <v-col cols="12">
-                <v-subheader class="white--text text-h5"
+    <v-container fluid width="100%" class="pt-0" style="overflow-x: hidden">
+        <v-row class="pt-0">
+            <v-col cols="12" class="pt-0 pb-0"
+                ><v-subheader class="white--text text-h5"
                     >探索新歌手</v-subheader
+                ></v-col
+            >
+            <v-col cols="12" class="ml-3">
+                <div
+                    class="d-flex flex-nowrap"
+                    id="scrollX"
+                    style="
+                        overflow-x: hidden;
+                        overflow-y: hidden;
+                        height: 240px;
+                    "
                 >
-                <v-card
-                    class="d-inline-block secondary ml-3 mr-8 elevation-0"
-                    v-for="item in newSinger"
-                    :key="item.name"
-                    link
-                >
-                    <v-container
-                        class="py-0"
-                        @click="$yyMusic.changeMusic([item])"
+                    <v-card
+                        class="d-inline-block secondary ml-0 mr-8 elevation-0"
+                        v-for="item in newSinger"
+                        :key="item.name"
+                        link
                     >
-                        <v-row>
-                            <v-img
-                                height="180"
-                                width="180"
-                                :src="item.songImg"
-                                class="rounded-lg d-block"
-                            ></v-img>
-                        </v-row>
-                        <v-row class="pl-1 pt-2">
-                            <div class="white--text d-block">
-                                {{ item.tsinger.singerName }}
-                            </div>
-                        </v-row>
-                        <v-row class="pl-1">
-                            <div class="grey--text d-block">
-                                {{ item.songName }}
-                            </div>
-                        </v-row>
-                    </v-container>
-                </v-card>
+                        <v-container
+                            class="py-0"
+                            @click="$yyMusic.changeMusic([item])"
+                        >
+                            <v-row>
+                                <v-img
+                                    height="180"
+                                    width="180"
+                                    :src="item.songImg"
+                                    class="rounded-lg d-block"
+                                ></v-img>
+                            </v-row>
+                            <v-row class="pl-1 pt-2">
+                                <div class="white--text d-block">
+                                    {{ item.tsinger.singerName }}
+                                </div>
+                            </v-row>
+                            <v-row class="pl-1">
+                                <div class="grey--text d-block">
+                                    {{ item.songName }}
+                                </div>
+                            </v-row>
+                        </v-container>
+                    </v-card>
+                </div>
             </v-col>
         </v-row>
         <v-row class="justify-space-between">
-            <v-col cols="7"
+            <v-col cols="7" class="pt-0"
                 ><v-subheader class="white--text text-h5">热门</v-subheader>
 
                 <v-list>
@@ -49,6 +61,7 @@
                         dense
                         style="height: 50px"
                         link
+                        @click="handleSinger(item)"
                     >
                         <v-list-item-avatar rounded>
                             <v-img :src="item.songImg"></v-img>
@@ -66,7 +79,9 @@
                         </v-list-item-content>
 
                         <v-list-item-content class="ml-10 text-right">
-                            <v-list-item-title>3:23</v-list-item-title>
+                            <v-list-item-title>{{
+                                $yyMusic.numberToTime(item.songTime)
+                            }}</v-list-item-title>
                         </v-list-item-content>
 
                         <v-list-item-action link>
@@ -79,7 +94,7 @@
                     </v-list-item>
                 </v-list>
             </v-col>
-            <v-col cols="5" class="">
+            <v-col cols="5" class="pt-0">
                 <v-subheader class="white--text text-h5 pl-1">氛围</v-subheader>
                 <v-row>
                     <v-col cols="6">
@@ -100,8 +115,6 @@
                             <h1>流行</h1>
                         </v-card>
                     </v-col>
-                </v-row>
-                <v-row>
                     <v-col cols="6">
                         <v-card
                             height="197px"
@@ -129,6 +142,9 @@
 <script>
 // 引入请求配置
 import NWOPT from "@/network/options.js";
+
+// 引入插件
+import { horwheel } from "@/utils/scrollX.js";
 export default {
     data: () => {
         return {
@@ -146,13 +162,52 @@ export default {
                 let data = res.data.rows;
 
                 this.newSinger = data;
-
-                this.popularSinger = data;
             });
+
+            this.$yyRequest({
+                url: NWOPT.HOTRANK,
+            }).then((res) => {
+                let data = res.data;
+                this.popularSinger = data.splice(0, 7);
+            });
+
+            // 获取推荐歌单
+            this.$yyRequest({
+                url: NWOPT.HOTLIST,
+            }).then((res) => {
+                let data = res.data;
+            });
+        },
+        handleSinger(item) {
+            this.$yyHot.update(['status','currentSinger'],true)
+            this.$yyMusic.changeMusic([item]);
+            this.$yyRequest({
+                url:NWOPT.SINGERINFO,
+                params:{
+                    id:item.singerId
+                }
+            }).then(res=>{
+                let data = res.data
+                this.$yyHot.update('currentSinger',data)
+            })
+
+            this.$yyRequest({
+                url:NWOPT.SINGERLIST,
+                params:{
+                    singerId:item.singerId,
+                    page:0,
+                    limit:100
+                }
+            }).then(res=>{
+                let data = res.data.rows
+                this.$yyHot.update('songList',data)
+            })
         },
     },
     mounted() {
         this.requestSongerList();
+
+        horwheel(document.getElementById("scrollX"));
     },
 };
 </script>

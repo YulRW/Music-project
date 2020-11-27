@@ -21,16 +21,37 @@
                     class="tertiary"
                 >
                     <!-- 用户 -->
-                    <v-list-item
-                        class="px-2"
-                        @click="openStatusData.login = true"
-                    >
-                        <v-list-item-avatar>
-                            <v-img
-                                src="@/assets/img/default-avatar.png"
-                            ></v-img>
-                        </v-list-item-avatar>
-                    </v-list-item>
+                    <v-tooltip right>
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item class="px-2 justify-center">
+                                <!-- 未登录 -->
+                                <v-list-item-icon
+                                    @click="openStatusData.login = true"
+                                    v-bind="attrs"
+                                    v-on="on"
+                                    v-if="!$store.state.isLogin"
+                                    ><v-icon
+                                        >mdi-account-question-outline</v-icon
+                                    ></v-list-item-icon
+                                >
+
+                                <!-- 已登录 -->
+                                <v-list-item-avatar
+                                    v-else
+                                    v-bind="attrs"
+                                    v-on="on"
+                                >
+                                    <v-img
+                                        :src="$store.state.userInfo.imgUrl"
+                                        @click="
+                                            openStatusData.currentUser = true
+                                        "
+                                    ></v-img>
+                                </v-list-item-avatar>
+                            </v-list-item>
+                        </template>
+                        <span>用户</span>
+                    </v-tooltip>
 
                     <v-divider></v-divider>
 
@@ -49,7 +70,7 @@
                                                 ? 'primary'
                                                 : ''
                                         "
-                                        @click="$router.push(item.fullPath)"
+                                        @click="navigation(item.fullPath)"
                                     >
                                         <v-list-item-action>
                                             <v-icon>{{ item.icon }}</v-icon>
@@ -80,7 +101,7 @@
                                 <v-list-item
                                     link
                                     :key="item.text"
-                                    @click="$router.push(item.fullPath)"
+                                    @click="navigation(item.fullPath)"
                                     class="mb-1"
                                     :class="
                                         item.fullPath === $route.fullPath
@@ -114,14 +135,27 @@
                             </template>
                         </v-list>
 
-                        <v-list-item link class="mt-4">
-                            <v-list-item-action>
-                                <v-icon color="grey darken-1">mdi-cog</v-icon>
-                            </v-list-item-action>
-                            <v-list-item-title class="grey--text text--darken-1"
-                                >应用设置</v-list-item-title
-                            >
-                        </v-list-item>
+                        <v-menu offset-x :close-on-content-click="false">
+                            <template v-slot:activator="{ on, attrs }">
+                                <v-list-item
+                                    link
+                                    class="mt-4"
+                                    v-bind="attrs"
+                                    v-on="on"
+                                >
+                                    <v-list-item-action>
+                                        <v-icon color="grey darken-1"
+                                            >mdi-cog</v-icon
+                                        >
+                                    </v-list-item-action>
+                                    <v-list-item-title
+                                        class="grey--text text--darken-1"
+                                        >应用设置</v-list-item-title
+                                    >
+                                </v-list-item>
+                            </template>
+                            <yy-app-settings></yy-app-settings>
+                        </v-menu>
                     </v-list>
                 </v-col>
             </v-row>
@@ -140,9 +174,8 @@
             <!-- 左上角icon -->
             <v-icon class="mx-4" large> mdi-music-note-outline </v-icon>
             <!-- 导航栏标题 -->
-            <v-toolbar-title class="mr-12 align-center">
-                <span class="title">智鲨音乐</span>
-            </v-toolbar-title>
+            <yy-toolbar-title></yy-toolbar-title>
+
             <v-spacer></v-spacer>
             <v-card style="position: relative">
                 <v-text-field
@@ -154,8 +187,6 @@
                     label="查找歌曲.."
                     prepend-inner-icon="mdi-magnify"
                     @input="requestSong"
-                    @blur="searchRet = []"
-                    @focus="requestSong"
                 >
                 </v-text-field>
                 <v-list
@@ -167,7 +198,7 @@
                             two-line
                             :key="index"
                             link
-                            @click="$yyMusic.changeMusic([item])"
+                            @click="changeMusic(item)"
                         >
                             <v-list-item-content>
                                 <v-list-item-title>{{
@@ -198,203 +229,19 @@
         <!-- 主要内容 -->
         <v-main class="secondary">
             <v-container class="fill-height">
-                <keep-alive>
-                    <router-view></router-view>
-                </keep-alive>
+                <v-scroll-x-transition mode="out-in">
+                    <keep-alive>
+                        <router-view></router-view>
+                    </keep-alive>
+                </v-scroll-x-transition>
             </v-container>
         </v-main>
 
         <!-- 登录注册 -->
         <v-dialog max-width="500" v-model="openStatusData.login">
-            <v-card class="mx-auto" max-width="500">
-                <v-card-title class="font-weight-bold justify-space-between">
-                    <span>{{ currentTitle }}</span>
-                    <v-avatar
-                        v-show="registerStep !== 1"
-                        color="primary lighten-2"
-                        class="subheading white--text"
-                        size="24"
-                        v-text="registerStep - 1"
-                    ></v-avatar>
-                </v-card-title>
-
-                <v-window v-model="registerStep">
-                    <!-- 登录 -->
-                    <v-window-item :value="1">
-                        <v-card-text>
-                            <v-form v-model="loginForm.valid" ref="loginForm">
-                                <v-text-field
-                                    label="账号"
-                                    placeholder="输入你的用户名"
-                                    v-model="loginForm.username"
-                                    :rules="[formRules.required]"
-                                ></v-text-field>
-
-                                <v-text-field
-                                    label="密码"
-                                    placeholder="输入你的密码"
-                                    :rules="[formRules.required]"
-                                    v-model="loginForm.password"
-                                    autocomplete="new-password"
-                                    :append-icon="
-                                        loginForm.eye1
-                                            ? 'mdi-eye'
-                                            : 'mdi-eye-off'
-                                    "
-                                    :type="loginForm.eye1 ? 'text' : 'password'"
-                                    @click:append="
-                                        loginForm.eye1 = !loginForm.eye1
-                                    "
-                                ></v-text-field>
-                                <v-row>
-                                    <v-col cols="4">
-                                        <v-btn
-                                            @click="requestVerifyCode"
-                                            class="px-0"
-                                        >
-                                            <v-img
-                                                src="http://47.115.72.55:9999/user/verifyCode"
-                                            ></v-img> </v-btn
-                                    ></v-col>
-                                    <v-col cols="8">
-                                        <v-text-field
-                                            label="验证码"
-                                            placeholder="请输入你的验证码"
-                                            v-model="loginForm.verifyCode"
-                                        ></v-text-field
-                                    ></v-col>
-                                </v-row>
-                            </v-form>
-
-                            <v-btn
-                                block
-                                color="primary"
-                                @click="login"
-                                class="mt-4"
-                                :disabled="!loginForm.valid"
-                                >登录</v-btn
-                            >
-                        </v-card-text>
-                    </v-window-item>
-
-                    <!-- 注册用户名 -->
-                    <v-window-item :value="2">
-                        <v-card-text>
-                            <v-form
-                                v-model="registerForm.userValid"
-                                ref="userReForm"
-                            >
-                                <v-text-field
-                                    v-model="registerForm.username"
-                                    label="注册用户名"
-                                    counter="16"
-                                    :rules="registerForm.userRules"
-                                    @input="registerForm.isExist = false"
-                                    hint="字母开头，字母数字下划线组成。至少5位，至多16位"
-                                ></v-text-field>
-                                <span
-                                    class="caption grey--text text--darken-1 mb-5"
-                                    >用户名是用来登录此网站的唯一账号。</span
-                                >
-
-                                <v-text-field
-                                    v-model="registerForm.email"
-                                    label="输入邮箱"
-                                    :rules="[formRules.required]"
-                                ></v-text-field>
-                                <span
-                                    class="caption grey--text text--darken-1 mb-5"
-                                    >邮箱用来登录或者找回账号</span
-                                >
-                            </v-form>
-                        </v-card-text>
-                    </v-window-item>
-
-                    <!-- 注册密码 -->
-                    <v-window-item :value="3">
-                        <v-card-text>
-                            <v-form v-model="registerForm.passwordValid">
-                                <v-text-field
-                                    label="密码"
-                                    v-model="registerForm.password"
-                                    :rules="registerForm.passwordRules"
-                                    hint="密码至少6位,至多18位"
-                                    autocomplete="new-password"
-                                    :append-icon="
-                                        registerForm.eye1
-                                            ? 'mdi-eye'
-                                            : 'mdi-eye-off'
-                                    "
-                                    :type="
-                                        registerForm.eye1 ? 'text' : 'password'
-                                    "
-                                    @click:append="
-                                        registerForm.eye1 = !registerForm.eye1
-                                    "
-                                ></v-text-field>
-                                <v-text-field
-                                    label="确认密码"
-                                    v-model="registerForm.passwordR"
-                                    autocomplete="new-password"
-                                    :rules="registerForm.passwordRRules"
-                                    :append-icon="
-                                        registerForm.eye2
-                                            ? 'mdi-eye'
-                                            : 'mdi-eye-off'
-                                    "
-                                    :type="
-                                        registerForm.eye2 ? 'text' : 'password'
-                                    "
-                                    @click:append="
-                                        registerForm.eye2 = !registerForm.eye1
-                                    "
-                                ></v-text-field>
-                            </v-form>
-                            <span class="caption grey--text text--darken-1"
-                                >请输入账户对应的密码。</span
-                            >
-                        </v-card-text>
-                    </v-window-item>
-
-                    <!-- 注册成功 -->
-                    <v-window-item :value="4">
-                        <div class="pa-4 text-center">
-                            <v-img
-                                class="mb-4"
-                                contain
-                                height="128"
-                                src="@/assets/logo.png"
-                            ></v-img>
-                            <h3 class="title font-weight-light mb-2">
-                                欢迎来到智鲨音乐世界！
-                            </h3>
-                            <span class="caption grey--text"
-                                >感谢注册！马上登录吧！</span
-                            >
-                        </div>
-                    </v-window-item>
-                </v-window>
-
-                <v-divider></v-divider>
-
-                <v-card-actions>
-                    <v-btn text @click="registerStep--" v-show="backShow"
-                        >后退</v-btn
-                    >
-                    <v-spacer></v-spacer>
-                    <v-btn
-                        :disabled="formBtn"
-                        color="primary"
-                        depressed
-                        @click="registerStepFuc(registerStep)"
-                    >
-                        <span v-if="registerStep === 1">注册</span>
-                        <span v-else-if="registerStep === 2">下一步</span>
-                        <span v-else-if="registerStep === 3">完成</span>
-                        <span v-else-if="registerStep === 4">登录</span>
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
+            <yy-login-and-register
+                @input="openStatusData.login = $event"
+            ></yy-login-and-register>
         </v-dialog>
 
         <!-- 常用消息提示组件 -->
@@ -402,6 +249,7 @@
             {{ snackbarText }}
         </v-snackbar>
 
+        <!-- 创建歌单 -->
         <v-dialog max-width="500" :v-model="true">
             <v-card class="mx-auto" max-width="500">
                 <v-card-title class="font-weight-bold justify-space-between">
@@ -409,30 +257,66 @@
                 </v-card-title>
 
                 <v-card-text>
-                    <v-form v-model="loginForm.valid" ref="loginForm">
+                    <v-form>
                         <v-text-field
                             label="创建歌单名"
                             placeholder="输入你要创建的歌单名吧"
                         ></v-text-field>
-
-                        <v-text-field
-                            label="密码"
-                            placeholder="输入你的密码"
-                        ></v-text-field>
                     </v-form>
 
-                    <v-btn
-                        block
-                        color="primary"
-                        @click="login"
-                        class="mt-4"
-                        :disabled="!loginForm.valid"
-                        >登录</v-btn
-                    >
+                    <v-btn block color="primary" class="mt-4">创建</v-btn>
                 </v-card-text>
 
                 <v-divider></v-divider>
             </v-card>
+        </v-dialog>
+
+        <!-- 用户详情 -->
+        <v-dialog
+            v-model="openStatusData.currentUser"
+            fullscreen
+            hide-overlay
+            transition="dialog-bottom-transition"
+        >
+            <yy-user-info
+                @input="openStatusData.currentUser = $event"
+            ></yy-user-info>
+        </v-dialog>
+
+        <!-- 歌曲详情 -->
+        <v-dialog
+            v-model="$store.state.status.currentMusicOpen"
+            fullscreen
+            hide-overlay
+            transition="dialog-bottom-transition"
+        >
+            <yy-current-music
+                @input="$store.state.currentMusic = $event"
+            ></yy-current-music>
+        </v-dialog>
+
+        <!-- 歌单详情页 -->
+        <v-dialog
+            v-model="$store.state.status.currentMusicListOpen"
+            fullscreen
+            hide-overlay
+            transition="dialog-bottom-transition"
+        >
+            <yy-music-list
+                @input="$store.state.status.currentMusicListOpen = $event"
+            ></yy-music-list>
+        </v-dialog>
+
+        <!-- 歌手详情页 -->
+        <v-dialog
+            v-model="$store.state.status.currentSinger"
+            fullscreen
+            hide-overlay
+            transition="dialog-bottom-transition"
+        >
+            <yy-current-singer
+                @input="$store.state.status.currentSinger = $event"
+            ></yy-current-singer>
         </v-dialog>
     </v-app>
 </template>
@@ -440,8 +324,17 @@
 <script>
 // 引入组件
 import yyMusicPlayer from "@/components/yy-cpns/yy-music-player";
+import yyCurrentMusic from "@/components/yy-cpns/yy-current-music";
+import yyUserInfo from "@/components/yy-cpns/yy-user-info";
+import yyToolbarTitle from "@/components/yy-cpns/yy-toolbar-title";
+import yyAppSettings from "@/components/yy-cpns/yy-app-settings";
+import yyLoginAndRegister from "@/components/yy-cpns/yy-login-and-register";
+import yyMusicList from "@/components/yy-cpns/yy-music-list";
+import yyCurrentSinger from "@/components/yy-cpns/yy-current-singer";
+
 // 引入请求配置
 import NWOPT from "@/network/options.js";
+import YyAppSettings from "../components/yy-cpns/yy-app-settings.vue";
 export default {
     name: "Home",
     data: () => {
@@ -451,6 +344,8 @@ export default {
                 leftDrawer: null,
                 musicPlayer: true,
                 login: false,
+                currentUser: false,
+                currentMusicList: false,
             },
             // 音频状态数据
             audioStatusData: {
@@ -493,66 +388,6 @@ export default {
                 ],
             },
 
-            /**
-             * 登录&注册
-             */
-
-            // 注册步骤
-            registerStep: 1,
-
-            // 注册表单
-            registerForm: {
-                username: "",
-                password: "",
-                passwordR: "",
-                email: "",
-                userValid: false,
-                passwordValid: false,
-                isExist: false,
-                eye1: false,
-                eye2: false,
-                userRules: [
-                    (v) => !!v || "用户名必填",
-                    (v) =>
-                        (v.length <= 16 && v.length >= 5) ||
-                        "用户名至少5位，至多16位",
-                    (v) => {
-                        return (
-                            /^[a-zA-Z][a-zA-Z0-9_]*$/.test(v) ||
-                            "用户名可由字母数字下划线组成，且需字母开头"
-                        );
-                    },
-                    // (v) =>
-                    //     !this.registerForm.isExist || "该用户名已存在，请更换",
-                ],
-                passwordRules: [
-                    (v) =>
-                        (v.length >= 6 && v.length <= 18) ||
-                        "密码至少6位，至多18位",
-                ],
-                passwordRRules: [
-                    (v) => !!v || "必填",
-                    // (v) => {
-                    //     return (
-                    //         this.registerForm.passwordR ===
-                    //             this.registerForm.password || "密码不一致"
-                    //     );
-                    // },
-                ],
-            },
-            // 登录表单
-            loginForm: {
-                username: "",
-                password: "",
-                verifyCode: "",
-                valid: false,
-                eye1: false,
-            },
-            // 通用规则
-            formRules: {
-                required: (v) => !!v || "必填",
-            },
-
             // 搜索结果
             searchRet: [],
 
@@ -570,17 +405,58 @@ export default {
          * 初始化
          */
         init() {
+            let wHeight = window.screen.height;
+            let yHeight = wHeight * 0.77;
+            // let yHeight = wHeight * 0.5;
             // 播放器弹入弹出监听
             document.addEventListener(
                 "mousemove",
                 this.handleChoke((e) => {
-                    if (e.screenY > 850) {
+                    if (e.screenY > yHeight) {
                         this.openStatusData.musicPlayer = true;
                     } else {
                         this.openStatusData.musicPlayer = false;
                     }
                 }, 200)
             );
+
+            // 自动登录
+            if (this.$yyCookies.get("token")) {
+                this.requestUserInfo();
+            }
+
+            /**
+             * 获取"我喜欢"歌单和其他歌单
+             */
+            this.requestUserSongList().then((res) => {
+                /**
+                 * 获取我喜欢歌单对象
+                 */
+                let myLoveList = res.data.find((n) => {
+                    return n.listName === "我喜欢";
+                });
+                this.requestSongList(myLoveList.id).then((res) => {
+                    this.$store.state.mySongList.push(...res.data);
+                });
+
+                /**
+                 * 获取其他创建对象
+                 */
+                res.data.forEach((n) => {
+                    this.requestSongList(n.id).then((res) => {
+                        this.$store.state.myLoveList = res.data;
+                    });
+                });
+            });
+        },
+        /**
+         * 搜索栏点击结果
+         */
+        changeMusic(item) {
+            this.$yyMusic.changeMusic([item]);
+            this.$yyHot.update(["status", "currentMusicOpen"], true);
+            this.searchValue = "";
+            this.searchRet = [];
         },
         /**
          * 节流
@@ -608,6 +484,27 @@ export default {
             };
         },
         /**
+         * 获取用户所有歌单
+         */
+        requestUserSongList() {
+            return this.$yyRequest({
+                url: NWOPT.SONGLIST,
+                headers: { Authorization: `${this.$yyCookies.get("token")}` },
+            });
+        },
+        /**
+         * 获取歌单所有歌曲
+         */
+        requestSongList(id) {
+            return this.$yyRequest({
+                url: NWOPT.SONGLISTINFO,
+                headers: { Authorization: `${this.$yyCookies.get("token")}` },
+                params: {
+                    songListId: id,
+                },
+            });
+        },
+        /**
          * 导航
          */
         navShow(fullPath) {
@@ -624,68 +521,20 @@ export default {
                 return this.$route.fullPath === "/Shop";
             }
         },
+
         /**
-         * 登录
+         * 请求用户信息
          */
-        login() {
+        requestUserInfo() {
             this.$yyRequest({
-                url: NWOPT.LOGIN,
-                method: "post",
-                headers: { "content-type": "application/json; charset=UTF-8" },
-                data: {
-                    username: this.loginForm.username,
-                    password: this.loginForm.password,
-                    code: this.loginForm.verifyCode,
-                },
-            })
-                .then((res) => {})
-                .catch((res) => {
-                    this.showSnackbar({
-                        type: "error",
-                        text: res,
-                    });
-                });
-        },
-        /**
-         * 登录注册表单
-         */
-        registerStepFuc(step) {
-            switch (step) {
-                case 2:
-                    this.registerStep++;
-                    break;
-
-                case 3:
-                    // 注册
-                    this.$yyRequest({
-                        url: NWOPT.REGISTER,
-                        method: "post",
-                        data: {
-                            email: this.registerForm.email,
-                            username: this.registerForm.username,
-                            password: this.registerForm.passwordR,
-                        },
-                    })
-                        .then((res) => {
-                            console.log(res, "回应");
-
-                            this.registerForm.isExist = false;
-                            this.registerStep++;
-                        })
-                        .catch((res) => {
-                            this.registerForm.isExist = true;
-                            let flag = this.$refs.userReForm.validate();
-                            this.showSnackbar({
-                                type: "error",
-                                text: res,
-                            });
-                        });
-
-                    break;
-                default:
-                    this.registerStep++;
-                    break;
-            }
+                url: NWOPT.INFO,
+                headers: { Authorization: `${this.$yyCookies.get("token")}` },
+            }).then((res) => {
+                // 修改登录状态
+                this.$yyHot.update("isLogin", true);
+                // 写入用户信息
+                this.$yyHot.update("userInfo", res.data);
+            });
         },
         /**
          * 搜索
@@ -693,6 +542,7 @@ export default {
         requestSong() {
             let e = this.searchValue;
             if (e === "") {
+                this.searchRet = [];
                 return;
             }
             this.$yyRequest({
@@ -721,9 +571,7 @@ export default {
         requestVerifyCode() {
             this.$yyRequest({
                 url: NWOPT.VERIFYCODE,
-            }).then((res) => {
-                console.log(res, "验证码");
-            });
+            }).then((res) => {});
         },
 
         /**
@@ -738,66 +586,35 @@ export default {
                 this.snackbarText = "";
             }, obj.time || 2000);
         },
-    },
-    computed: {
-        /**
-         * 注册框步骤
-         */
-        currentTitle() {
-            switch (this.registerStep) {
-                case 1:
-                    return "登录";
-                case 2:
-                    return "创建账户";
-                case 3:
-                    return "创建密码";
-                case 4:
-                    return "注册成功";
+        navigation(to) {
+            if (to === this.$route.fullPath) {
+                return;
             }
-        },
-        /**
-         * 注册框后退步骤
-         */
-        backShow() {
-            switch (this.registerStep) {
-                case 1:
-                    return false;
-                case 2:
-                    return true;
-                case 3:
-                    return true;
-                case 4:
-                    return false;
-            }
-        },
-        /**
-         * 表单按钮
-         */
-        formBtn() {
-            switch (this.registerStep) {
-                case 1:
-                    return false;
-                    break;
-                case 2:
-                    return !this.registerForm.userValid;
-                    break;
-                case 3:
-                    return !this.registerForm.passwordValid;
-                    break;
-                case 4:
-                    return false;
-                    break;
-                default:
-                    break;
-            }
+            this.$router.push({
+                path: to,
+            });
         },
     },
+    computed: {},
     created() {
         this.$vuetify.theme.dark = true;
         this.init();
     },
-    watch: {},
-    components: { yyMusicPlayer },
+    watch: {
+        "$store.state.showSnackbar"(newVal, oldVal) {
+            this.showSnackbar(newVal);
+        },
+    },
+    components: {
+        yyMusicPlayer,
+        yyUserInfo,
+        yyToolbarTitle,
+        yyAppSettings,
+        yyLoginAndRegister,
+        yyCurrentMusic,
+        yyMusicList,
+        yyCurrentSinger,
+    },
 };
 </script>
 

@@ -11,6 +11,10 @@ const Shop = ()=>import('@/views/Shop');
 
 const routes = [
   {
+    path: '/index.html',
+    redirect:'/Main'
+  },
+  {
     path: '/',
     redirect:'/Main'
   },
@@ -42,7 +46,7 @@ const routes = [
 ]
 
 const router = new VueRouter({
-  mode: 'history',
+  // mode: 'history',
   base: process.env.BASE_URL,
   routes
 })

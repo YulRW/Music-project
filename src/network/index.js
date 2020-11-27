@@ -2,6 +2,7 @@ import Vue from 'vue'
 import axios from 'axios'
 
 const yyBaseURL = 'http://47.115.72.55:9999/'
+// const yyBaseURL = 'http://10.21.71.108:9999/'
 
 const yyTimeout = 60000
 
