@@ -9,7 +9,8 @@ export default new Vuex.Store({
     status:{
       currentMusicOpen:false,
       currentMusicListOpen:false,
-      currentSinger:false
+      currentSinger:false,
+      currentMV :false
     },
     // 音频对象
     musicAudio: null,

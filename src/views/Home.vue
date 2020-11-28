@@ -318,6 +318,18 @@
                 @input="$store.state.status.currentSinger = $event"
             ></yy-current-singer>
         </v-dialog>
+
+        <!-- mv页面 -->
+        <v-dialog
+            v-model="$store.state.status.currentMV"
+            fullscreen
+            hide-overlay
+            transition="dialog-bottom-transition"
+        >
+            <yy-current-mv
+                @input="$store.state.status.currentMV = $event"
+            ></yy-current-mv>
+        </v-dialog>
     </v-app>
 </template>
 
@@ -331,6 +343,7 @@ import yyAppSettings from "@/components/yy-cpns/yy-app-settings";
 import yyLoginAndRegister from "@/components/yy-cpns/yy-login-and-register";
 import yyMusicList from "@/components/yy-cpns/yy-music-list";
 import yyCurrentSinger from "@/components/yy-cpns/yy-current-singer";
+import yyCurrentMv from "@/components/yy-cpns/yy-current-mv";
 
 // 引入请求配置
 import NWOPT from "@/network/options.js";
@@ -614,6 +627,7 @@ export default {
         yyCurrentMusic,
         yyMusicList,
         yyCurrentSinger,
+        yyCurrentMv
     },
 };
 </script>
