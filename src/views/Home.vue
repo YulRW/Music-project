@@ -316,7 +316,7 @@
         >
             <yy-current-singer
                 @input="$store.state.status.currentSinger = $event"
-            ></yy-current-singer>
+            ></yy-current-singer> 
         </v-dialog>
 
         <!-- mv页面 -->

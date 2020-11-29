@@ -54,7 +54,10 @@ export default new Vuex.Store({
     curPlayerIndex:0,
 
     // 当前歌手信息
-    currentSinger:null
+    currentSinger:null,
+
+    //当前播放的MV
+    curPlayerMV: null
   },
   mutations: {
     // 更新vuex中state数据
@@ -62,7 +65,11 @@ export default new Vuex.Store({
       data
     }) {
       if (typeof data.key === 'string') {
+        console.log('*************');
+        console.log(data.key);
+        console.log(data.value);
         state[data.key] = data.value;
+        console.log(state[data.key]);
       } else {
         let keyt = undefined;
 

@@ -14,7 +14,7 @@
                 >
             </v-toolbar-items>
         </v-toolbar>
-        <v-container>
+        <v-container> 
             <v-row>
                 <!-- 唱片 -->
                 <yy-music-box :isPlay='$store.state.isPlay'></yy-music-box>

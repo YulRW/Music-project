@@ -24,6 +24,12 @@ Vue.prototype.$yyMusic = yy.$yyMusic
 import cookies from 'js-cookie';
 Vue.prototype.$yyCookies = cookies;
 
+//视频插件
+import VideoPlayer from 'vue-video-player'
+require('video.js/dist/video-js.css')
+require('vue-video-player/src/custom-theme.css')
+Vue.use(VideoPlayer)
+
 // 配置
 Vue.config.productionTip = false
 

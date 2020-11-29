@@ -52,6 +52,18 @@
                     <!-- 
                         扩展功能
                      -->
+                    <!-- 播放MV -->
+                    <v-alert
+                        text
+                        type="warning"
+                        v-if="tipNoneMV"
+                    >当前歌曲没有MV</v-alert>
+                    <v-list-item-icon class="mx-5" @click="playMV">
+                        <v-btn icon>
+                            MV
+                        </v-btn>
+                    </v-list-item-icon>         
+
                     <!-- 音量 -->
                     <v-menu offset-y top open-on-hover>
                         <template v-slot:activator="{ on, attrs }">
@@ -263,6 +275,9 @@ export default {
 
             // 歌曲播放列表
             playerList: [],
+
+            //是否有MV可以播放
+            tipNoneMV: false,
         };
     },
     props: {
@@ -271,8 +286,32 @@ export default {
         },
     },
     methods: {
+        //播放录音
+        playMV() {
+            // if(!this.playerList.length ) {
+            //     this.$yyHot.update('currentSinger',this.defaultMusicSrc)
+            // } else {
+            //     this.$yyHot.update('currentSinger',this.defaultMusicSrc)
+            // }
+            this.tipNoneMV = false
+            if(this.playerList.length && this.playerList[this.curPlayerIndex].mvUrl) {
+                this.$yyHot.update(['status','currentMV'],true)
+
+                //暂停播放
+                this.pause() 
+            }else {
+                this.tipNoneMV = true
+                setTimeout(()=>{
+                this.tipNoneMV = false
+                },1000)
+            }
+        },
         // 播放
         play() {
+            if(this.$store.state.curPlayerMV) {
+                console.log(this.$store.state.curPlayerMV);
+                this.$store.state.curPlayerMV.pause()
+            }
             this.paused = false;
             this.audio.play();
             this.syncStatus = true;
@@ -304,7 +343,7 @@ export default {
         },
         // 进步条同步
         syncProgress() {
-            console.log('定时器');
+            // console.log('定时器');
             if (!this.syncStatus) {
                 clearTimeout(this.progressTimer);
                 return;
@@ -459,9 +498,11 @@ export default {
             this.audio.src = this.playerList[0].musicUrl;
             clearTimeout(this.progressTimer);
             this.curPlayerIndex = 0;
-            this.$store.state.currentMusic = this.playerList[
-                this.curPlayerIndex
-            ];
+            // this.$store.state.currentMusic = this.playerList[
+            //     this.curPlayerIndex
+            // ];
+            this.$yyHot.update("currentMusic",this.playerList[this.curPlayerIndex])
+
             this.play();
         },
         curPlayerIndex(newVal, oldVal) {
@@ -477,8 +518,9 @@ export default {
             this.audio.src = this.playerList[newVal].musicUrl;
             clearTimeout(this.progressTimer);
             this.play();
-            this.$store.state.currentMusic = this.playerList[newVal];
-            console.log(this.playerList, "llll");
+            // this.$store.state.currentMusic = this.playerList[newVal];
+            this.$yyHot.update("currentMusic",this.playerList[newVal])
+
         },
         "$store.state.curPlayerIndex": function (newVal, oldVal) {
             this.changeList(newVal);
